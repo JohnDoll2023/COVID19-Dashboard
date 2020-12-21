@@ -259,6 +259,7 @@ ui <- fluidPage(
                                 label = "Click in the box to select counties to highlight: ",
                                 choices = unique(OhioCountyTimeDF$County),
                                 multiple = TRUE,
+
                                 selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"),
                                 options = list(maxItems = 8)),
                  sliderInput("MAdays",
@@ -290,6 +291,7 @@ ui <- fluidPage(
                                 multiple = TRUE,
                                 selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"),
                                 options = list(maxItems = 8)),
+
                  downloadButton("tab3Download", "Download the graph")
                ),
                mainPanel(
@@ -502,6 +504,7 @@ server <- function(input, output, session) {
            title=paste(names(varnames)[varnames==input$yvar],
                        "by County - ", input$MAdays,
                        "d Moving Average"),
+
            subtitle=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
                                                                                                                                                        "ncases" = OhioTotalDF$ncases,
                                                                                                                                                        "ndead" = OhioTotalDF$ndead,
@@ -518,6 +521,7 @@ server <- function(input, output, session) {
            #                                                                                                                                        "deathRate10K" = OhioTotalDF$deathRate10K,
            #                                                                                                                                        "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
            # 
+
            caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
                           "\n","* Rates are counts per 10,000 residents by county.")) +
       geom_col(data=Time_DF(),
@@ -531,6 +535,7 @@ server <- function(input, output, session) {
                          y = input$yvar,
                          color = "County"),
               n=input$MAdays, linetype=1, size=1.25) +
+
       scale_fill_manual("County",values=ColorCounties) +
       scale_color_manual("County",values=ColorCounties) +
       scale_x_date(date_breaks = "1 month",
@@ -749,8 +754,7 @@ server <- function(input, output, session) {
     },
     contentType = ".csv"
   )
-  
 }
 
 # run the application 
-shinyApp(ui = ui, server = server)
+shinyApp

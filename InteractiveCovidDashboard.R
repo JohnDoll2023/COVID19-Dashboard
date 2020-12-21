@@ -223,6 +223,7 @@ LastCase <- max(OhioDF$OnsetDate)
 
 # define UI for application
 ui <- fluidPage(
+
   
   theme = shinytheme("readable"),
   
@@ -412,6 +413,7 @@ http://www.jstatsoft.org/v40/i03/"),
 
 # define server logic required to draw output
 server <- function(input, output, session) {
+
   
   # define reactive functions for tabs 2-5
   Time_DF <- reactive({
@@ -736,7 +738,6 @@ server <- function(input, output, session) {
     },
     contentType = ".csv"
   )
-  
 }
 
 # run the application 

@@ -424,6 +424,7 @@ server <- function(input, output, session) {
                        "by County - ", input$MAdays,
                        "d Moving Average"),
            subtitle=paste("Updated: ",TODAY),
+
            tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
                                                                                                                                                   "ncases" = OhioTotalDF$ncases,
                                                                                                                                                   "ndead" = OhioTotalDF$ndead,
@@ -431,7 +432,15 @@ server <- function(input, output, session) {
                                                                                                                                                   "caseRate10K" = OhioTotalDF$caseRate10K,
                                                                                                                                                   "deathRate10K" = OhioTotalDF$deathRate10K,
                                                                                                                                                   "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
-           
+
+		tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
+
+                                                                                                                                                  "ncases" = OhioTotalDF$ncases,
+                                                                                                                                                  "ndead" = OhioTotalDF$ndead,
+                                                                                                                                                  "nhosp" = OhioTotalDF$nhosp,
+                                                                                                                                                  "caseRate10K" = OhioTotalDF$caseRate10K,
+                                                                                                                                                  "deathRate10K" = OhioTotalDF$deathRate10K,
+                                                                                                                                                  "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
            caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
                           "\n","* Rates are counts per 10,000 residents by county.")) +
       geom_col(data=Time_DF(),

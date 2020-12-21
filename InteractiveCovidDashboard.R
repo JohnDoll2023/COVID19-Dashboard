@@ -230,6 +230,7 @@ ui <- fluidPage(
     tabsetPanel(
         ###################### Tab 1 - choropleth map ############################
         tabPanel("Ohio Map", 
+
                  downloadButton("tab1Download", "Download the map"),
                  plotlyOutput("Map"),
                  tags$div(
@@ -266,6 +267,8 @@ ui <- fluidPage(
                                         start = FirstCase,
                                         end   = TODAY),
                          downloadButton("tab2Download", "Download the graph")),
+
+                                        end   = TODAY)),
                      mainPanel(
                          plotOutput("BarTime")
                      )
@@ -285,6 +288,7 @@ ui <- fluidPage(
                                         multiple = TRUE,
                                         selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware")),
                          downloadButton("tab3Download", "Download the graph")
+                                        selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"))
                      ),
                      mainPanel(
                          plotOutput("BarCounty")
@@ -318,6 +322,7 @@ ui <- fluidPage(
                                         start = FirstCase,
                                         end   = TODAY),
                          downloadButton("tab4Download", "Download the graph")),
+                                        end   = TODAY)),
                      mainPanel(
                          plotOutput("BarAge")
                      )
@@ -416,6 +421,49 @@ http://www.jstatsoft.org/v40/i03/"),
                          tags$li(tags$a("Shiny Themes", href="https://rstudio.github.io/shinythemes/")),
                      )
                  ))
+        ###################### Tab 7 - references ################################
+        tabPanel("References",
+                 tags$div(
+                     tags$p("An Ohio COVID Dashboard by Austin Chamroontaneskul"),
+                     tags$p("Date of Construction: December 4, 2020"),
+                     tags$p("The COVID data were obtained from a ",
+                            tags$a("CSV data set",
+                                   href="https://coronavirus.ohio.gov/static/COVIDSummaryData.csv",
+                                   .noWS = "outside"
+                            ),
+                            " downloaded from the ",
+                            tags$a("Ohio Department of Health COVID-19 Dashboard",
+                                   href="https://coronavirus.ohio.gov/wps/portal/gov/covid-19/dashboards",
+                                   .noWS = "outside")),
+                     tags$p("The population data were obtained from a ",
+                            tags$a("CSV data set",
+                                   href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv",
+                                   .noWS = "outside"
+                            ),
+                            " downloaded from the ",
+                            tags$a("United States Census Bureau",
+                                   href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/",
+                                   .noWS = "outside")),
+                     tags$p("Color hexes were selected from ",
+                            tags$a("HTMLcolorcodes.com",
+                                   href="https://htmlcolorcodes.com/",
+                                   .noWS = "outside")),
+                     tags$p("R packages utilized:"),
+                     tags$ul(
+                         tags$li("C. Sievert. Interactive Web-Based Data Visualization with R, plotly, and shiny. Chapman and
+  Hall/CRC Florida, 2020."),
+                         tags$li("Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with lubridate. Journal of
+  Statistical Software, 40(3), 1-25. URL https://www.jstatsoft.org/v40/i03/."),
+                         
+                         tags$li("Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686,
+                         https://doi.org/10.21105/joss.01686"),
+                         tags$li("Winston Chang (2018). shinythemes: Themes for Shiny. R package version 1.1.2.
+  https://CRAN.R-project.org/package=shinythemes"),
+                         tags$li("Winston Chang, Joe Cheng, JJ Allaire, Yihui Xie and Jonathan McPherson (2020). shiny: Web
+  Application Framework for R. R package version 1.5.0. https://CRAN.R-project.org/package=shiny")
+                     )
+                 )
+        )
     )
 )
 
@@ -466,7 +514,7 @@ server <- function(input, output, session) {
             labs(title = paste("Interactive Cumulative Counts/Rates from",FirstCase,"to",LastCase))
         ggplotly(MapGG, tooltip = c("text"))
     })
-    
+  
     ###################### Tab 1 - download button ######################
     output$tab1Download=downloadHandler(
         filename=function(){"OhioChoropleth.png"},
@@ -500,6 +548,7 @@ server <- function(input, output, session) {
         },
         contentType = "image/png"
     )
+
     ###################### Tab 2 - bar graphs over time ######################
     output$BarTime <- renderPlot({
         ggplot() +

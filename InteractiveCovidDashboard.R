@@ -19,7 +19,7 @@ OhioDF <- read_csv(file= ohioCovidDashboard) %>%
 
 #remove unknown sex
 OhioDF<- OhioDF %>% 
-    filter(Sex != "Unknown")
+  filter(Sex != "Unknown")
 
 
 # load in and clean population dataset
@@ -42,8 +42,8 @@ OhioCountyDF <- OhioDF %>%
 
 ###################### Tab 1 - choropleth map ############################
 # add county population to DF and construct rates
-OhioCountyDF <- merge(OhioCountyDF, OhioPop, by="County")
-OhioCountyDF <- OhioCountyDF %>% 
+OhioCountyDF2 <- merge(OhioCountyDF, OhioPop, by="County")
+OhioCountyDF <- OhioCountyDF2 %>% 
   mutate(caseRate10K = round(ncases/Pop2019*10000,0),
          deathRate10K = round(ndead/Pop2019*10000,0),
          hospRate10K = round(nhosp/Pop2019*10000,0),
@@ -51,6 +51,15 @@ OhioCountyDF <- OhioCountyDF %>%
                                       breaks = c(0, 1000, 2000, 
                                                  5000, signif(max(ncases) + 10000,1)),
                                       dig.lab = 10)))
+
+#data frame with total counts and rates
+OhioTotalDF <- merge(OhioCountyDF2, OhioPop, by="County") %>% 
+  summarize(ncases = sum(ncases),
+            ndead = sum(ndead),
+            nhosp = sum(nhosp),
+            caseRate10K = round(sum(ncases)/sum(Pop2019.x)*10000,0),
+            deathRate10K = round(sum(ndead)/sum(Pop2019.x)*10000,0),
+            hospRate10K = round(sum(nhosp)/sum(Pop2019.x)*10000,0))
 
 # manipulate case count ranges for proper display in map legend later
 # to avoid complications with levels option in scale_fill_brewer
@@ -87,8 +96,8 @@ OhioCountyTimeDF <- OhioDF %>%
 OhioCountyTimeDF <- merge(OhioCountyTimeDF, OhioPop, by="County")
 OhioCountyTimeDF <- OhioCountyTimeDF %>% 
   mutate(caseRate10K = round(ncases/Pop2019*10000,0),
-           deathRate10K = round(ndead/Pop2019*10000,0),
-           hospRate10K = round(nhosp/Pop2019*10000,0))
+         deathRate10K = round(ndead/Pop2019*10000,0),
+         hospRate10K = round(nhosp/Pop2019*10000,0))
 
 ###################### Tab 3 - bar graphs by county ######################
 # we use the OhioCountyDF already built earlier
@@ -192,6 +201,8 @@ ui <- fluidPage(
     tabPanel("Ohio Map", 
              plotlyOutput("Map"),
              tags$div(
+               tags$body("Scroll over a county for further data"),
+               tags$br(),
                tags$tbody(paste("Updated: ",TODAY)),
                tags$br(),
                tags$tbody("* Rates are counts per 10,000 residents by county."),
@@ -329,7 +340,7 @@ ui <- fluidPage(
                       tags$a("CSV data set",
                              href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv",
                              .noWS = "outside"
-                             ),
+                      ),
                       " downloaded from the ",
                       tags$a("United States Census Bureau",
                              href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/",
@@ -385,13 +396,8 @@ server <- function(input, output, session) {
                                       y=lat,
                                       group=group,
                                       fill=CountCatC,
-                                      County = County,
-                                      `Case Count` = ncases,
-                                      `Death Count` = ndead,
-                                      `Hospitalization Count` = nhosp,
-                                      `Case Rate` = caseRate10K,
-                                      `Death Rate` = deathRate10K,
-                                      `Hospitalization Rate` = hospRate10K)) +
+                                      
+                                      text = paste(County, "<br>Cases: ", ncases, "<br>Deaths: ", ndead, "<br>Hospitalizations: ", nhosp, "<br>Case Rate: ", caseRate10K, "<br>Death Rate: ", deathRate10K,"<br>Hospitalization Rate: ", hospRate10K, sep = ""))) +
       scale_fill_brewer(palette = "Blues", name = "Case Counts") +
       geom_polygon(colour = "black", size = .1) +
       coord_map("polyconic") +
@@ -405,9 +411,8 @@ server <- function(input, output, session) {
             panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),
             panel.border=element_blank()) +
-      labs(title = paste("Cumulative Counts/Rates from",FirstCase,"to",LastCase))
-    ggplotly(MapGG, tooltip = c("County","Case Count","Death Count","Hospitalization Count",
-                                "Case Rate","Death Rate","Hospitalization Rate"))
+      labs(title = paste("Interactive Cumulative Counts/Rates from",FirstCase,"to",LastCase))
+    ggplotly(MapGG, tooltip = c("text"))
   })
   
   ###################### Tab 2 - bar graphs over time ######################
@@ -418,6 +423,14 @@ server <- function(input, output, session) {
                        "by County - ", input$MAdays,
                        "d Moving Average"),
            subtitle=paste("Updated: ",TODAY),
+		tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
+                                                                                                                                                  "ncases" = OhioTotalDF$ncases,
+                                                                                                                                                  "ndead" = OhioTotalDF$ndead,
+                                                                                                                                                  "nhosp" = OhioTotalDF$nhosp,
+                                                                                                                                                  "caseRate10K" = OhioTotalDF$caseRate10K,
+                                                                                                                                                  "deathRate10K" = OhioTotalDF$deathRate10K,
+                                                                                                                                                  "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
+
            caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
                           "\n","* Rates are counts per 10,000 residents by county.")) +
       geom_col(data=Time_DF(),

@@ -230,6 +230,8 @@ ui <- fluidPage(
     tabsetPanel(
         ###################### Tab 1 - choropleth map ############################
         tabPanel("Ohio Map", 
+
+                 downloadButton("tab1Download", "Download the map"),
                  plotlyOutput("Map"),
                  tags$div(
                      tags$body("Scroll over a county for further data"),
@@ -263,6 +265,9 @@ ui <- fluidPage(
                          dateRangeInput("daterange",
                                         "Date range:",
                                         start = FirstCase,
+                                        end   = TODAY),
+                         downloadButton("tab2Download", "Download the graph")),
+
                                         end   = TODAY)),
                      mainPanel(
                          plotOutput("BarTime")
@@ -281,6 +286,8 @@ ui <- fluidPage(
                                         label = "Click in the box to select county to highlight: ",
                                         choices = unique(OhioCountyTimeDF$County),
                                         multiple = TRUE,
+                                        selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware")),
+                         downloadButton("tab3Download", "Download the graph")
                                         selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"))
                      ),
                      mainPanel(
@@ -313,6 +320,8 @@ ui <- fluidPage(
                          dateRangeInput("daterangeAge",
                                         "Date range:",
                                         start = FirstCase,
+                                        end   = TODAY),
+                         downloadButton("tab4Download", "Download the graph")),
                                         end   = TODAY)),
                      mainPanel(
                          plotOutput("BarAge")
@@ -349,10 +358,69 @@ ui <- fluidPage(
         ###################### Tab 6 - top counties table ####################
         tabPanel("Table", 
                  tags$tbody("* Rates are counts per 10,000 residents by county."),
+                 tags$br(),
+                 downloadButton("tab5Download", "Download the table"),
                  dataTableOutput("table"),
                  tags$a("Source: Ohio Department of Health Dashboard Data",
                         href="https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")
         ),
+        ###################### Tab 7- Angela's reference page ####################
+        tabPanel("Acknowledgements & References", 
+                 tags$div(
+                     tags$br(),
+                     tags$h4("Authors"),
+                     tags$h6("Abby Tietjen, Ashley Lefebvre, Austin Chamroontaneskul,
+                             Angela Famera, Madison McMillen, John Doll,
+                             Deirdre Sperry, Darek Davis"),
+                     tags$br(),
+                     tags$h4("Date of Construction"),
+                     tags$h6("2020-12-21"),
+                     tags$br(),
+                     tags$h4("Sources"),
+                     tags$h6("Data"),
+                     tags$ul(
+                         tags$li("The Ohio COVID-19 data was obtained from a ", 
+                                 tags$a("CSV data set",
+                                        href = "https://coronavirus.ohio.gov/static/COVIDSummaryData.csv"), "downloaded from the ",
+                                 tags$a("Ohio Department of Health COVID-19 Dashboard",
+                                        href = "https://coronavirus.ohio.gov/wps/portal/gov/covid-19/dashboards")),
+                         tags$li("The Popuation Data was obtained from a ",
+                                 tags$a("CSV data set", href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv"),
+                                 "downloaded from the Census Bureau")
+                     ),
+                     tags$h6("R Libraries"),
+                     tags$ul(
+                         tags$li("Winston Chang, Joe Cheng, JJ Allaire, Yihui Xie and Jonathan McPherson (2020). shiny: Web Application Framework
+  for R. R package version 1.5.0. https://CRAN.R-project.org/package=shiny"),
+                         tags$li(" Winston Chang (2018). shinythemes: Themes for Shiny. R package version 1.1.2.
+  https://CRAN.R-project.org/package=shinythemes"),
+                         tags$li("Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software,
+4(43), 1686, https://doi.org/10.21105/joss.01686"),
+                         tags$li("Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with
+lubridate. Journal of Statistical Software, 40(3), 1-25. URL
+http://www.jstatsoft.org/v40/i03/"),
+                         tags$li("C. Sievert. Interactive Web-Based Data Visualization with R, plotly, and shiny. Chapman and Hall/CRC Florida,
+  2020."),
+                         tags$li(" Matt Dancho and Davis Vaughan (2020). tidyquant: Tidy Quantitative Financial Analysis. R package version 1.0.1.
+  https://CRAN.R-project.org/package=tidyquant")
+                     ),
+                     tags$h6("Outside Sources"),
+                     tags$ul(
+                         tags$li(tags$a("Basic Stacked area chart with R", 
+                                        href="https://www.r-graph-gallery.com/136-stacked-area-chart.html")),
+                         tags$li(tags$a("Citing R packages in your Thesis/Paper/Assignments",
+                                        href="https://www.blopig.com/blog/2013/07/citing-r-packages-in-your-thesispaperassignments/#:~:text=citation()%20To%20cite%20R,R%2Dproject.org%2F.")),
+                         tags$li(tags$a("Convert ggplot object in shiny application", 
+                                        href="https://stackoverflow.com/questions/37663854/convert-ggplot-object-to-plotly-in-shiny-application")),
+                         tags$li(tags$a("GGPLOT TITLE, SUBTITLE AND CAPTION", 
+                                        href="https://www.datanovia.com/en/blog/ggplot-title-subtitle-and-caption/#:~:text=Change%20the%20font%20appearance%20(text,%E2%80%9Cbold%E2%80%9D%20and%20%E2%80%9Cbold.")),
+                         tags$li(tags$a("Scale and size of plot in RStudio shiny", 
+                                        href="https://stackoverflow.com/questions/17838709/scale-and-size-of-plot-in-rstudio-shiny")),
+                         tags$li(tags$a("Shiny HTML Tage Glossary", 
+                                        href="https://shiny.rstudio.com/articles/tag-glossary.html")),
+                         tags$li(tags$a("Shiny Themes", href="https://rstudio.github.io/shinythemes/")),
+                     )
+                 ))
         ###################### Tab 7 - references ################################
         tabPanel("References",
                  tags$div(
@@ -446,7 +514,41 @@ server <- function(input, output, session) {
             labs(title = paste("Interactive Cumulative Counts/Rates from",FirstCase,"to",LastCase))
         ggplotly(MapGG, tooltip = c("text"))
     })
-    
+  
+    ###################### Tab 1 - download button ######################
+    output$tab1Download=downloadHandler(
+        filename=function(){"OhioChoropleth.png"},
+        content=function(file){
+            png(file)
+            plot1 = ggplot(data=MapData, aes(x=long, y=lat,
+                                             group=group, fill=CountCatC,
+                                             text = paste(County, "<br>Cases: ", ncases, "<br>Deaths: ", 
+                                                          ndead, "<br>Hospitalizations: ", nhosp, "<br>Case Rate: ", 
+                                                          caseRate10K, "<br>Death Rate: ", 
+                                                          deathRate10K,"<br>Hospitalization Rate: ", 
+                                                          hospRate10K, sep = ""))) +
+                scale_fill_brewer(palette = "Blues", name = "Case Counts") +
+                geom_polygon(colour = "black", size = .1) +
+                coord_map("polyconic") +
+                theme_light() +
+                theme(axis.title.y=element_blank(),
+                      axis.ticks.y=element_blank(),
+                      axis.text.y=element_blank(),
+                      axis.ticks.x=element_blank(),
+                      axis.title.x=element_blank(),
+                      axis.text.x=element_blank(),
+                      panel.grid.major=element_blank(),
+                      panel.grid.minor=element_blank(),
+                      panel.border=element_blank()) +
+                labs(title = paste("Interactive Cumulative Counts/Rates from",
+                                   FirstCase,"to", LastCase))
+            
+            print(plot1)
+            dev.off()
+        },
+        contentType = "image/png"
+    )
+
     ###################### Tab 2 - bar graphs over time ######################
     output$BarTime <- renderPlot({
         ggplot() +
@@ -484,6 +586,50 @@ server <- function(input, output, session) {
             theme_minimal()
     })
     
+    ###################### Tab 2 - download boutton ######################
+    output$tab2Download=downloadHandler(
+        filename=function(){"CountsOverTime.png"},
+        content=function(file){
+            png(file)
+            plot2 = ggplot() +
+            labs(x="Date", y="Number",
+                 title=paste(names(varnames)[varnames==input$yvar],
+                             "by County - ", input$MAdays,
+                             "d Moving Average"),
+                 subtitle=paste("Updated: ",TODAY),
+                 tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
+                                                                                                                                                        "ncases" = OhioTotalDF$ncases,
+                                                                                                                                                        "ndead" = OhioTotalDF$ndead,
+                                                                                                                                                        "nhosp" = OhioTotalDF$nhosp,
+                                                                                                                                                        "caseRate10K" = OhioTotalDF$caseRate10K,
+                                                                                                                                                        "deathRate10K" = OhioTotalDF$deathRate10K,
+                                                                                                                                                        "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
+                 
+                 caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
+                                "\n","* Rates are counts per 10,000 residents by county.")) +
+            geom_col(data=Time_DF(),
+                     aes_string(x="Date",
+                                y=input$yvar,
+                                fill = "County"),
+                     alpha=0.5,
+                     position = "dodge") +
+            geom_ma(data=Time_DF(),
+                    aes_string(x = "Date",
+                               y = input$yvar,
+                               color = "County"),
+                    n=input$MAdays, linetype=1, size=1.25) +
+            scale_fill_manual("County",values=Color) +
+            scale_color_manual("County",values=Color) +
+            scale_x_date(date_breaks = "1 month",
+                         date_labels = "%b %d",
+                         limits=input$daterange) +
+            theme_minimal()
+            print(plot2)
+            dev.off()
+        },
+        contentType = "image/png"
+    )
+    
     ###################### Tab 3 - bar graphs by county ######################
     output$BarCounty <- renderPlot({
         ggplot() +
@@ -510,6 +656,40 @@ server <- function(input, output, session) {
                   axis.text.x =element_blank(),
                   axis.text.y = element_text(size = 12))
     })
+    
+    ###################### Tab 3 - download button ######################
+    output$tab3Download=downloadHandler(
+        filename=function(){"CountsByCounty.png"},
+        content=function(file){
+            png(file)
+            plot3= ggplot() +
+            labs(x="Number", y="County",
+                 title=paste("Cumulative",names(varnames)[varnames==input$zvar],"from",FirstCase,"to",LastCase),
+                 subtitle=paste("Updated: ",TODAY),
+                 caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
+                                "\n","* Rates are counts per 10,000 residents by county.")) +
+            geom_col(data = County_DF(), aes_string(y = paste("reorder(County,",input$zvar,")"), 
+                                                    x = input$zvar,
+                                                    fill = "County")) + #bar graph
+            geom_text(size=4,data=County_DF(),aes_string(x=input$zvar,y=paste("reorder(County,",input$zvar,")"),label=input$zvar,fill=NULL, hjust = -0.1))+
+            #scale_x_continuous(expand=c(0,0))+
+            scale_fill_manual("County",values=Color) +
+            theme_light() +
+            theme(legend.position = "none",
+                  axis.title.x=element_blank(),
+                  axis.ticks.x=element_blank(),
+                  axis.title.y=element_blank(),
+                  axis.ticks.y=element_blank(),
+                  panel.grid.major=element_blank(),
+                  panel.grid.minor=element_blank(),
+                  panel.border=element_blank(),
+                  axis.text.x =element_blank(),
+                  axis.text.y = element_text(size = 12))
+            print(plot3)
+            dev.off()
+        },
+        contentType = "image/png"
+        )
     
     ###################### Tab 4 - bar graphs by age #########################
     output$BarAge <- renderPlot({
@@ -539,6 +719,42 @@ server <- function(input, output, session) {
                          limits=input$daterangeAge) +
             theme_minimal()
     })
+    
+    ###################### Tab 4 - download #########################
+    output$tab4Download=downloadHandler(
+        filename=function(){"AgeComparisons.png"},
+        content=function(file){
+            png(file)
+            plot4= ggplot() +
+            labs(x="Date", y="Number",
+                 title=paste(names(varnamesAge)[varnamesAge==input$avar],
+                             "by Age Range - ", input$MAdaysAge,
+                             "d Moving Average"),
+                 subtitle=paste("Updated: ",TODAY),
+                 caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")) +
+            #           tag = paste(input$county,"County"))
+            geom_col(data=Age_DF(),
+                     aes_string(x="Date",
+                                y=input$avar,
+                                fill = "AgeRange"),
+                     alpha=0.5,
+                     position = "dodge") +
+            geom_ma(data=Age_DF(),
+                    aes_string(x = "Date",
+                               y = input$avar,
+                               color = "AgeRange"),
+                    n=input$MAdaysAge, linetype=1, size=1.25) +
+            scale_fill_manual("AgeRange",values = ColorAge) +
+            scale_color_manual("AgeRange",values = ColorAge) +
+            scale_x_date(date_breaks = "1 month",
+                         date_labels = "%b %d",
+                         limits=input$daterangeAge) +
+            theme_minimal()
+        print(plot4)
+        dev.off()
+    },
+    contentType = "image/png"
+    )
     
     # ###################### Tab 5 - bar graphs by sex #########################
     # output$BarSex <- renderPlot({
@@ -570,6 +786,19 @@ server <- function(input, output, session) {
     
     ###################### Tab 6 - top counties table ####################
     output$table <- renderDataTable(OhioTopCountyDF)
+    
+    ###################### Tab 6 - download ####################
+    output$tab5Download=downloadHandler(
+        filename=function(){"OhioCovidData.csv"},
+        content=function(file){
+            #names table5 the table of the desired amount of counties
+            table5 = (OhioTopCountyDF)
+            #writes a csv of table5
+            write.csv(table5, file, row.names = FALSE)
+        },
+        contentType = ".csv"
+    )
+    
 }
 
 # run the application 

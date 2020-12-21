@@ -1,6 +1,6 @@
 # Dynamic Dashboard Server Project
 # Austin Chamroontaneskul, et al.
-# December 15, 2020
+# December 18, 2020
 ################################
 # load necessary packages
 library(shiny)
@@ -259,8 +259,7 @@ ui <- fluidPage(
                                 label = "Click in the box to select counties to highlight: ",
                                 choices = unique(OhioCountyTimeDF$County),
                                 multiple = TRUE,
-
-                                selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"),
+                                selected = c("Butler", "Cuyahoga","Franklin","Hamilton"),
                                 options = list(maxItems = 8)),
                  sliderInput("MAdays",
                              "Days averaged:",
@@ -269,7 +268,7 @@ ui <- fluidPage(
                              value = 7),
                  dateRangeInput("daterange",
                                 "Date range:",
-                                start = FirstCase,
+                                start = "2020-04-01",
                                 end   = TODAY),
                  downloadButton("tab2Download", "Download the graph")),
                mainPanel(
@@ -289,9 +288,8 @@ ui <- fluidPage(
                                 label = "Click in the box to select county to highlight: ",
                                 choices = unique(OhioCountyTimeDF$County),
                                 multiple = TRUE,
-                                selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"),
+                                selected = c("Butler", "Cuyahoga","Franklin","Hamilton"),
                                 options = list(maxItems = 8)),
-
                  downloadButton("tab3Download", "Download the graph")
                ),
                mainPanel(
@@ -313,7 +311,7 @@ ui <- fluidPage(
                              selected = "Butler"),
                  dateRangeInput("daterangeAge",
                                 "Date range:",
-                                start = FirstCase,
+                                start = "2020-04-01",
                                 end   = TODAY),
                  downloadButton("tab4Download", "Download the graph")),
                mainPanel(
@@ -341,7 +339,7 @@ ui <- fluidPage(
     #                              value = 7),
     #                  dateRangeInput("daterangeSex",
     #                                 "Date range:",
-    #                                 start = FirstCase,
+    #                                 start = "2020-04-01",
     #                                 end   = TODAY)),
     #              mainPanel(
     #                  plotOutput("BarSex")
@@ -362,9 +360,9 @@ ui <- fluidPage(
              tags$div(
                tags$br(),
                tags$h4("Authors"),
-               tags$h6("Abby Tietjen, Ashley Lefebvre, Austin Chamroontaneskul,
-                             Angela Famera, Madison McMillen, John Doll,
-                             Deirdre Sperry, Darek Davis"),
+               tags$h6("Austin Chamroontaneskul, Darek Davis, John Doll, 
+                        Angela Famera, Ashley Lefebvre, Madison McMillen,
+                        Deirdre Sperry, Abby Tietjen"), 
                tags$br(),
                tags$h4("Date of Construction"),
                tags$h6("2020-12-21"),
@@ -504,7 +502,6 @@ server <- function(input, output, session) {
            title=paste(names(varnames)[varnames==input$yvar],
                        "by County - ", input$MAdays,
                        "d Moving Average"),
-
            subtitle=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
                                                                                                                                                        "ncases" = OhioTotalDF$ncases,
                                                                                                                                                        "ndead" = OhioTotalDF$ndead,
@@ -512,7 +509,7 @@ server <- function(input, output, session) {
                                                                                                                                                        "caseRate10K" = OhioTotalDF$caseRate10K,
                                                                                                                                                        "deathRate10K" = OhioTotalDF$deathRate10K,
                                                                                                                                                        "hospRate10K" = OhioTotalDF$hospRate10K),
-           "\n","Updated: ",TODAY, sep = ""),
+                          "\n","Updated: ",TODAY, sep = ""),
            # tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
            #                                                                                                                                        "ncases" = OhioTotalDF$ncases,
            #                                                                                                                                        "ndead" = OhioTotalDF$ndead,
@@ -521,7 +518,6 @@ server <- function(input, output, session) {
            #                                                                                                                                        "deathRate10K" = OhioTotalDF$deathRate10K,
            #                                                                                                                                        "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
            # 
-
            caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
                           "\n","* Rates are counts per 10,000 residents by county.")) +
       geom_col(data=Time_DF(),
@@ -535,7 +531,6 @@ server <- function(input, output, session) {
                          y = input$yvar,
                          color = "County"),
               n=input$MAdays, linetype=1, size=1.25) +
-
       scale_fill_manual("County",values=ColorCounties) +
       scale_color_manual("County",values=ColorCounties) +
       scale_x_date(date_breaks = "1 month",
@@ -754,7 +749,8 @@ server <- function(input, output, session) {
     },
     contentType = ".csv"
   )
+  
 }
 
 # run the application 
-shinyApp
+shinyApp(ui = ui, server = server)

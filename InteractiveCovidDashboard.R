@@ -389,6 +389,7 @@ server <- function(input, output, session) {
   Sex_DF <- reactive({
     OhioSexDF %>% 
       filter(Sex %in% c(input$sex))})
+
   
   ###################### Tab 1 - choropleth map ############################
   output$Map <- renderPlotly({
@@ -423,7 +424,8 @@ server <- function(input, output, session) {
                        "by County - ", input$MAdays,
                        "d Moving Average"),
            subtitle=paste("Updated: ",TODAY),
-		tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
+
+           tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
                                                                                                                                                   "ncases" = OhioTotalDF$ncases,
                                                                                                                                                   "ndead" = OhioTotalDF$ndead,
                                                                                                                                                   "nhosp" = OhioTotalDF$nhosp,
@@ -431,6 +433,14 @@ server <- function(input, output, session) {
                                                                                                                                                   "deathRate10K" = OhioTotalDF$deathRate10K,
                                                                                                                                                   "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
 
+		tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
+
+                                                                                                                                                  "ncases" = OhioTotalDF$ncases,
+                                                                                                                                                  "ndead" = OhioTotalDF$ndead,
+                                                                                                                                                  "nhosp" = OhioTotalDF$nhosp,
+                                                                                                                                                  "caseRate10K" = OhioTotalDF$caseRate10K,
+                                                                                                                                                  "deathRate10K" = OhioTotalDF$deathRate10K,
+                                                                                                                                                  "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
            caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
                           "\n","* Rates are counts per 10,000 residents by county.")) +
       geom_col(data=Time_DF(),
@@ -462,8 +472,9 @@ server <- function(input, output, session) {
                           "\n","* Rates are counts per 10,000 residents by county.")) +
       geom_col(data = County_DF(), aes_string(y = paste("reorder(County,",input$zvar,")"), 
                                               x = input$zvar,
-                                              fill = "County")) +
-      scale_x_continuous(expand=c(0,0)) +
+                                              fill = "County")) + #bar graph
+      geom_text(size=4,data=County_DF(),aes_string(x=input$zvar,y=paste("reorder(County,",input$zvar,")"),label=input$zvar,fill=NULL, hjust = -0.1))+
+      #scale_x_continuous(expand=c(0,0))+
       scale_fill_manual("County",values=Color) +
       theme_light() +
       theme(legend.position = "none",
@@ -473,7 +484,9 @@ server <- function(input, output, session) {
             axis.ticks.y=element_blank(),
             panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),
-            panel.border=element_blank())
+            panel.border=element_blank(),
+            axis.text.x =element_blank(),
+            axis.text.y = element_text(size = 12))
   })
   
   ###################### Tab 4 - bar graphs by age #########################

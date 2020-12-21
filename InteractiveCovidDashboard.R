@@ -176,31 +176,35 @@ OhioTopCountyDF <- OhioTopCountyDF%>%
 
 ###################### Miscellaneous variables/mappings ###################
 # set up color mappings for counties
-ColorsChoices <- c("#C0392B","#E74C3C","#8E44AD","#3498DB",
-                   "1ABC9C","#95A5A6","#27AE60","#2ECC71",
-                   "#F1C40F","#F39C12","#E67E22")
-Color <- c("Adams" = "#E74C3C", "Butler" = "#E74C3C", "Crawford" = "#E74C3C", "Franklin" = "#E74C3C", "Hardin" = "#E74C3C",
-           "Jefferson" = "#E74C3C", "Madison" = "#E74C3C", "Montgomery" = "#E74C3C", "Pickaway" = "#E74C3C", "Scioto" = "#E74C3C",
-           "Van Wert" = "#E74C3C", "Allen" = "#8E44AD", "Carroll" = "#8E44AD", "Cuyahoga" = "#8E44AD", "Fulton" = "#8E44AD", 
-           "Harrison" = "#8E44AD", "Knox" = "#8E44AD", "Mahoning" = "#8E44AD", "Morgan" = "#8E44AD", "Pike" = "#8E44AD", "Seneca" = "#8E44AD", 
-           "Vinton" = "#8E44AD", "Ashland" = "#3498DB", "Champaign" = "#3498DB", "Darke" = "#3498DB", "Gallia" = "#3498DB", "Henry" = "#3498DB", 
-           "Lake" = "#3498DB", "Marion" = "#3498DB", "Morrow" = "#3498DB", "Portage" = "#3498DB", "Shelby" = "#3498DB", "Warren" = "#3498DB", 
-           "Ashtabula" = "#1ABC9C", "Clark" = "#1ABC9C", "Defiance" = "#1ABC9C", "Geauga" = "#1ABC9C", "Highland" = "#1ABC9C", "Lawrence" = "#1ABC9C", 
-           "Medina" = "#1ABC9C", "Muskingum" = "#1ABC9C", "Preble" = "#1ABC9C", "Stark" = "#1ABC9C", "Washington" = "#1ABC9C", "Athens" = "#95A5A6", 
-           "Clermont" = "#95A5A6", "Delaware" = "#95A5A6", "Greene" = "#95A5A6", "Hocking" = "#95A5A6", "Licking" = "#95A5A6", "Meigs" = "#95A5A6", "Noble" = "#95A5A6", 
-           "Putnam" = "#95A5A6", "Summit" = "#95A5A6", "Wayne" = "#95A5A6", "Auglaize" = "#2ECC71", "Clinton" = "#2ECC71", "Erie" = "#2ECC71", 
-           "Guernsey" = "#2ECC71", "Holmes" = "#2ECC71", "Logan" = "#2ECC71", "Mercer" = "#2ECC71", "Ottawa" = "#2ECC71", "Richland" = "#2ECC71", 
-           "Trumbull" = "#2ECC71", "Williams" = "#2ECC71", "Belmont" = "#F39C12", "Columbiana" = "#F39C12", "Fairfield" = "#F39C12", 
-           "Hamilton" = "#F39C12", "Huron" = "#F39C12", "Lorain" = "#F39C12", "Miami" = "#F39C12", "Paulding" = "#F39C12", "Ross" = "#F39C12", 
-           "Tuscarawas" = "#F39C12", "Wood" = "#F39C12", "Brown" = "#E67E22", "Coshocton" = "#E67E22", "Fayette" = "#E67E22", "Hancock" = "#E67E22", 
-           "Jackson" = "#E67E22", "Lucas" = "#E67E22", "Monroe" = "#E67E22", "Perry" = "#E67E22", "Sandusky" = "#E67E22", "Union" = "#E67E22", "Wyandot" = "#E67E22")
+# ColorsChoices <- c("#C0392B","#E74C3C","#8E44AD","#3498DB",
+#                    "1ABC9C","#95A5A6","#27AE60","#2ECC71",
+#                    "#F1C40F","#F39C12","#E67E22")
+# Color <- c("Adams" = "#E74C3C", "Butler" = "#E74C3C", "Crawford" = "#E74C3C", "Franklin" = "#E74C3C", "Hardin" = "#E74C3C",
+#            "Jefferson" = "#E74C3C", "Madison" = "#E74C3C", "Montgomery" = "#E74C3C", "Pickaway" = "#E74C3C", "Scioto" = "#E74C3C",
+#            "Van Wert" = "#E74C3C", "Allen" = "#8E44AD", "Carroll" = "#8E44AD", "Cuyahoga" = "#8E44AD", "Fulton" = "#8E44AD", 
+#            "Harrison" = "#8E44AD", "Knox" = "#8E44AD", "Mahoning" = "#8E44AD", "Morgan" = "#8E44AD", "Pike" = "#8E44AD", "Seneca" = "#8E44AD", 
+#            "Vinton" = "#8E44AD", "Ashland" = "#3498DB", "Champaign" = "#3498DB", "Darke" = "#3498DB", "Gallia" = "#3498DB", "Henry" = "#3498DB", 
+#            "Lake" = "#3498DB", "Marion" = "#3498DB", "Morrow" = "#3498DB", "Portage" = "#3498DB", "Shelby" = "#3498DB", "Warren" = "#3498DB", 
+#            "Ashtabula" = "#1ABC9C", "Clark" = "#1ABC9C", "Defiance" = "#1ABC9C", "Geauga" = "#1ABC9C", "Highland" = "#1ABC9C", "Lawrence" = "#1ABC9C", 
+#            "Medina" = "#1ABC9C", "Muskingum" = "#1ABC9C", "Preble" = "#1ABC9C", "Stark" = "#1ABC9C", "Washington" = "#1ABC9C", "Athens" = "#95A5A6", 
+#            "Clermont" = "#95A5A6", "Delaware" = "#95A5A6", "Greene" = "#95A5A6", "Hocking" = "#95A5A6", "Licking" = "#95A5A6", "Meigs" = "#95A5A6", "Noble" = "#95A5A6", 
+#            "Putnam" = "#95A5A6", "Summit" = "#95A5A6", "Wayne" = "#95A5A6", "Auglaize" = "#2ECC71", "Clinton" = "#2ECC71", "Erie" = "#2ECC71", 
+#            "Guernsey" = "#2ECC71", "Holmes" = "#2ECC71", "Logan" = "#2ECC71", "Mercer" = "#2ECC71", "Ottawa" = "#2ECC71", "Richland" = "#2ECC71", 
+#            "Trumbull" = "#2ECC71", "Williams" = "#2ECC71", "Belmont" = "#F39C12", "Columbiana" = "#F39C12", "Fairfield" = "#F39C12", 
+#            "Hamilton" = "#F39C12", "Huron" = "#F39C12", "Lorain" = "#F39C12", "Miami" = "#F39C12", "Paulding" = "#F39C12", "Ross" = "#F39C12", 
+#            "Tuscarawas" = "#F39C12", "Wood" = "#F39C12", "Brown" = "#E67E22", "Coshocton" = "#E67E22", "Fayette" = "#E67E22", "Hancock" = "#E67E22", 
+#            "Jackson" = "#E67E22", "Lucas" = "#E67E22", "Monroe" = "#E67E22", "Perry" = "#E67E22", "Sandusky" = "#E67E22", "Union" = "#E67E22", "Wyandot" = "#E67E22")
 
 # set up color mappings for age ranges
-ColorAge <- c("0-19" = "#A9CCE3","20-29" = "#5DADE2","30-39" = "#48C9B0","40-49" = "#17A589",
-              "50-59" = "#138D75","60-69" = "#117A65","70-79" = "#196F3D","80+" = "#145A32")
+# ColorAge <- c("0-19" = "#A9CCE3","20-29" = "#5DADE2","30-39" = "#48C9B0","40-49" = "#17A589",
+#               "50-59" = "#138D75","60-69" = "#117A65","70-79" = "#196F3D","80+" = "#145A32")
 
 # set up color mappings for sexes
-ColorSex <- c("Male" = "#3498DB", "Female" = "#E74C3C")
+# ColorSex <- c("Male" = "#3498DB", "Female" = "#E74C3C")
+
+# color mapping for counties
+ColorCounties <- c("#d77355","#508cd7","#64b964","#e6c86e",
+                   "#000000","#55415f","#d5764b","#dcf5ff")
 
 # vectors of variables for selected response by user input
 varnames <- c("Case Counts" = "ncases",
@@ -223,7 +227,6 @@ LastCase <- max(OhioDF$OnsetDate)
 
 # define UI for application
 ui <- fluidPage(
-
   
   theme = shinytheme("readable"),
   
@@ -256,7 +259,9 @@ ui <- fluidPage(
                                 label = "Click in the box to select counties to highlight: ",
                                 choices = unique(OhioCountyTimeDF$County),
                                 multiple = TRUE,
-                                selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware")),
+
+                                selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"),
+                                options = list(maxItems = 8)),
                  sliderInput("MAdays",
                              "Days averaged:",
                              min = 2,
@@ -284,7 +289,9 @@ ui <- fluidPage(
                                 label = "Click in the box to select county to highlight: ",
                                 choices = unique(OhioCountyTimeDF$County),
                                 multiple = TRUE,
-                                selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware")),
+                                selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"),
+                                options = list(maxItems = 8)),
+
                  downloadButton("tab3Download", "Download the graph")
                ),
                mainPanel(
@@ -413,7 +420,6 @@ http://www.jstatsoft.org/v40/i03/"),
 
 # define server logic required to draw output
 server <- function(input, output, session) {
-
   
   # define reactive functions for tabs 2-5
   Time_DF <- reactive({
@@ -498,15 +504,24 @@ server <- function(input, output, session) {
            title=paste(names(varnames)[varnames==input$yvar],
                        "by County - ", input$MAdays,
                        "d Moving Average"),
-           subtitle=paste("Updated: ",TODAY),
-           tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
-                                                                                                                                                  "ncases" = OhioTotalDF$ncases,
-                                                                                                                                                  "ndead" = OhioTotalDF$ndead,
-                                                                                                                                                  "nhosp" = OhioTotalDF$nhosp,
-                                                                                                                                                  "caseRate10K" = OhioTotalDF$caseRate10K,
-                                                                                                                                                  "deathRate10K" = OhioTotalDF$deathRate10K,
-                                                                                                                                                  "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
-           
+
+           subtitle=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
+                                                                                                                                                       "ncases" = OhioTotalDF$ncases,
+                                                                                                                                                       "ndead" = OhioTotalDF$ndead,
+                                                                                                                                                       "nhosp" = OhioTotalDF$nhosp,
+                                                                                                                                                       "caseRate10K" = OhioTotalDF$caseRate10K,
+                                                                                                                                                       "deathRate10K" = OhioTotalDF$deathRate10K,
+                                                                                                                                                       "hospRate10K" = OhioTotalDF$hospRate10K),
+           "\n","Updated: ",TODAY, sep = ""),
+           # tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
+           #                                                                                                                                        "ncases" = OhioTotalDF$ncases,
+           #                                                                                                                                        "ndead" = OhioTotalDF$ndead,
+           #                                                                                                                                        "nhosp" = OhioTotalDF$nhosp,
+           #                                                                                                                                        "caseRate10K" = OhioTotalDF$caseRate10K,
+           #                                                                                                                                        "deathRate10K" = OhioTotalDF$deathRate10K,
+           #                                                                                                                                        "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
+           # 
+
            caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
                           "\n","* Rates are counts per 10,000 residents by county.")) +
       geom_col(data=Time_DF(),
@@ -520,8 +535,9 @@ server <- function(input, output, session) {
                          y = input$yvar,
                          color = "County"),
               n=input$MAdays, linetype=1, size=1.25) +
-      scale_fill_manual("County",values=Color) +
-      scale_color_manual("County",values=Color) +
+
+      scale_fill_manual("County",values=ColorCounties) +
+      scale_color_manual("County",values=ColorCounties) +
       scale_x_date(date_breaks = "1 month",
                    date_labels = "%b %d",
                    limits=input$daterange) +
@@ -560,8 +576,8 @@ server <- function(input, output, session) {
                            y = input$yvar,
                            color = "County"),
                 n=input$MAdays, linetype=1, size=1.25) +
-        scale_fill_manual("County",values=Color) +
-        scale_color_manual("County",values=Color) +
+        scale_fill_manual("County",values=ColorCounties) +
+        scale_color_manual("County",values=ColorCounties) +
         scale_x_date(date_breaks = "1 month",
                      date_labels = "%b %d",
                      limits=input$daterange) +
@@ -585,7 +601,7 @@ server <- function(input, output, session) {
                                               fill = "County")) + #bar graph
       geom_text(size=4,data=County_DF(),aes_string(x=input$zvar,y=paste("reorder(County,",input$zvar,")"),label=input$zvar,fill=NULL, hjust = -0.1))+
       #scale_x_continuous(expand=c(0,0))+
-      scale_fill_manual("County",values=Color) +
+      scale_fill_manual("County",values=ColorCounties) +
       theme_light() +
       theme(legend.position = "none",
             axis.title.x=element_blank(),
@@ -615,7 +631,7 @@ server <- function(input, output, session) {
                                                 fill = "County")) + #bar graph
         geom_text(size=4,data=County_DF(),aes_string(x=input$zvar,y=paste("reorder(County,",input$zvar,")"),label=input$zvar,fill=NULL, hjust = -0.1))+
         #scale_x_continuous(expand=c(0,0))+
-        scale_fill_manual("County",values=Color) +
+        scale_fill_manual("County",values=ColorCounties) +
         theme_light() +
         theme(legend.position = "none",
               axis.title.x=element_blank(),
@@ -637,15 +653,15 @@ server <- function(input, output, session) {
   output$BarAge <- renderPlot({
     ggplot() +
       labs(x="Date", y=paste(names(varnamesAge)[varnamesAge==input$avar]), 
-                             title=paste(names(varnamesAge)[varnamesAge==input$avar],
-                                         "by Age Range"), subtitle=paste("Updated: ",TODAY)) +
+           title=paste(names(varnamesAge)[varnamesAge==input$avar],
+                       "by Age Range"), subtitle=paste("Updated: ",TODAY)) +
       geom_col(data=Age_DF(), 
                aes_string(
                  x="OnsetDate", 
                  y=input$avar, 
                  group="AgeRange"), 
                fill="#3498DB") +
-    scale_x_date(date_breaks = "1 month",date_labels = "%b %d", limits=input$daterangeAge) +
+      scale_x_date(date_breaks = "1 month",date_labels = "%b %d", limits=input$daterangeAge) +
       theme_classic() +
       # Homework 8 suggestion: "...diff rows better for comparing distributions)"
       # Kept a light gray line to better differentiate between the months throughout the rows

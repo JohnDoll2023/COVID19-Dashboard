@@ -13,53 +13,84 @@ library(tidyquant)
 # load in and clean COVID dataset
 ohioCovidDashboard <- "https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv"
 OhioDF <- read_csv(file= ohioCovidDashboard) %>% 
-  filter(Sex != "Total") %>%
-  mutate(AgeFactor = factor(`Age Range`),
-         OnsetDate = mdy(`Onset Date`))
+    filter(Sex != "Total") %>%
+    mutate(AgeFactor = factor(`Age Range`),
+           OnsetDate = mdy(`Onset Date`),
+           DeathDate = mdy(`Date Of Death`),
+           HospDate = mdy(`Admission Date`))
 
 #remove unknown sex
 OhioDF<- OhioDF %>% 
-  filter(Sex != "Unknown")
+    filter(Sex != "Unknown")
 
 
 # load in and clean population dataset
 OhioCountyPop <- read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv")
 OhioPop <- OhioCountyPop %>%
-  filter(STNAME == "Ohio") %>%
-  filter(CTYNAME != "Ohio") %>%
-  mutate(County = str_remove_all(CTYNAME," County"),
-         Pop2019 = POPESTIMATE2019) %>%
-  select(County, Pop2019)
+    filter(STNAME == "Ohio") %>%
+    filter(CTYNAME != "Ohio") %>%
+    mutate(County = str_remove_all(CTYNAME," County"),
+           Pop2019 = POPESTIMATE2019) %>%
+    select(County, Pop2019)
 
 # data frame with counts by County and OnsetDate
+
+OhioCountyCases <- OhioDF %>%
+    mutate(Date = OnsetDate) %>%
+    group_by(County, Date) %>%
+    summarize(ncases = sum(`Case Count`))
+
+OhioCountyDeaths <- OhioDF %>%
+    mutate(Date = DeathDate) %>%
+    group_by(County, Date) %>%
+    summarize(ndead = sum(`Death Due to Illness Count`,
+                          na.rm=TRUE))
+
+OhioCountyHosp <- OhioDF %>%
+    mutate(Date = HospDate) %>%
+    group_by(County, Date) %>%
+    summarize(nhosp = sum(`Hospitalized Count`,
+                          na.rm=TRUE))
+
+# need to left join so all union of all
+# case / hosp/ death dates included
+
+OhioCountyDFB <- OhioCountyCases %>%
+    left_join(OhioCountyHosp) %>%
+    left_join(OhioCountyDeaths) %>%
+    mutate(ndead = ifelse(is.na(ndead),0,ndead),
+           nhosp = ifelse(is.na(nhosp),0,nhosp),
+           ncases = ifelse(is.na(ncases),0,ncases))
+
 OhioCountyDF <- OhioDF %>%
-  group_by(County) %>%
-  summarize(ncases = sum(`Case Count`),
-            ndead = sum(`Death Due to Illness Count`,
-                        na.rm=TRUE),
-            nhosp = sum(`Hospitalized Count`,
-                        na.rm=TRUE))
+    group_by(County) %>%
+    summarize(ncases = sum(`Case Count`),
+              ndead = sum(`Death Due to Illness Count`,
+                          na.rm=TRUE),
+              nhosp = sum(`Hospitalized Count`,
+                          na.rm=TRUE))
+
 
 ###################### Tab 1 - choropleth map ############################
 # add county population to DF and construct rates
 OhioCountyDF2 <- merge(OhioCountyDF, OhioPop, by="County")
 OhioCountyDF <- OhioCountyDF2 %>% 
-  mutate(caseRate10K = round(ncases/Pop2019*10000,0),
-         deathRate10K = round(ndead/Pop2019*10000,0),
-         hospRate10K = round(nhosp/Pop2019*10000,0),
-         CountCatC = as.character(cut(ncases,
-                                      breaks = c(0, 1000, 2000, 
-                                                 5000, signif(max(ncases) + 10000,1)),
-                                      dig.lab = 10)))
+    mutate(caseRate10K = round(ncases/Pop2019*10000,0),
+           deathRate10K = round(ndead/Pop2019*10000,0),
+           hospRate10K = round(nhosp/Pop2019*10000,0),
+           CountCatC = as.character(cut(ncases,
+                                        breaks = c(0, 1000, 2000, 
+                                                   5000, signif(max(ncases) + 10000,1)),
+                                        dig.lab = 10)))
 
 #data frame with total counts and rates
 OhioTotalDF <- merge(OhioCountyDF2, OhioPop, by="County") %>% 
-  summarize(ncases = sum(ncases),
-            ndead = sum(ndead),
-            nhosp = sum(nhosp),
-            caseRate10K = round(sum(ncases)/sum(Pop2019.x)*10000,0),
-            deathRate10K = round(sum(ndead)/sum(Pop2019.x)*10000,0),
-            hospRate10K = round(sum(nhosp)/sum(Pop2019.x)*10000,0))
+    summarize(ncases = sum(ncases),
+              ndead = sum(ndead),
+              nhosp = sum(nhosp),
+              caseRate10K = round(sum(ncases)/sum(Pop2019.x)*10000,0),
+              deathRate10K = round(sum(ndead)/sum(Pop2019.x)*10000,0),
+              hospRate10K = round(sum(nhosp)/sum(Pop2019.x)*10000,0))
 
 # manipulate case count ranges for proper display in map legend later
 # to avoid complications with levels option in scale_fill_brewer
@@ -75,8 +106,8 @@ OhioCounties = subset(counties, region == "ohio")
 
 # data frame with counties formatted for proper grammar
 OhioCounties <- OhioCounties %>% 
-  mutate(County=str_to_title(subregion)) %>% 
-  select(-c(subregion))
+    mutate(County=str_to_title(subregion)) %>% 
+    select(-c(subregion))
 
 # data frame merged by county names
 MapData <- merge(OhioCountyDF,OhioCounties,
@@ -84,20 +115,20 @@ MapData <- merge(OhioCountyDF,OhioCounties,
 
 ###################### Tab 2 - bar graphs over time ######################
 # data frame with counts over time (OnsetDate)
-OhioCountyTimeDF <- OhioDF %>%
-  group_by(County, OnsetDate) %>%
-  summarize(ncases = sum(`Case Count`),
-            ndead = sum(`Death Due to Illness Count`,
-                        na.rm=TRUE),
-            nhosp = sum(`Hospitalized Count`,
-                        na.rm=TRUE))
+# OhioCountyTimeDF <- OhioCountyDFB %>%
+#     group_by(County, Date) %>%
+#     summarize(ncases = sum(`Case Count`),
+#               ndead = sum(`Death Due to Illness Count`,
+#                           na.rm=TRUE),
+#               nhosp = sum(`Hospitalized Count`,
+#                           na.rm=TRUE))
 
 # merge population dataset with COVID dataset
-OhioCountyTimeDF <- merge(OhioCountyTimeDF, OhioPop, by="County")
+OhioCountyTimeDF <- merge(OhioCountyDFB, OhioPop, by="County")
 OhioCountyTimeDF <- OhioCountyTimeDF %>% 
-  mutate(caseRate10K = round(ncases/Pop2019*10000,0),
-         deathRate10K = round(ndead/Pop2019*10000,0),
-         hospRate10K = round(nhosp/Pop2019*10000,0))
+    mutate(caseRate10K = round(ncases/Pop2019*10000,0),
+           deathRate10K = round(ndead/Pop2019*10000,0),
+           hospRate10K = round(nhosp/Pop2019*10000,0))
 
 ###################### Tab 3 - bar graphs by county ######################
 # we use the OhioCountyDF already built earlier
@@ -106,42 +137,42 @@ OhioCountyCountyDF <- OhioCountyDF
 ###################### Tab 4 - bar graphs by age #########################
 # data frame with counts over time (OnsetDate) by age
 OhioAgeTimeDF <- OhioDF %>%
-  filter(`Age Range` != "Unknown") %>% 
-  group_by(County, OnsetDate, `Age Range`) %>%
-  summarize(ncases = sum(`Case Count`),
-            ndead = sum(`Death Due to Illness Count`,
-                        na.rm=TRUE),
-            nhosp = sum(`Hospitalized Count`,
-                        na.rm=TRUE))
+    filter(`Age Range` != "Unknown") %>% 
+    group_by(County, OnsetDate, `Age Range`) %>%
+    summarize(ncases = sum(`Case Count`),
+              ndead = sum(`Death Due to Illness Count`,
+                          na.rm=TRUE),
+              nhosp = sum(`Hospitalized Count`,
+                          na.rm=TRUE))
 
 # merge population dataset with COVID dataset
 OhioAgeTimeDF <- merge(OhioAgeTimeDF, OhioPop, by="County") %>%
-  rename(AgeRange = `Age Range`)
+    rename(AgeRange = `Age Range`)
 
 ###################### Tab 5 - bar graphs by sex #########################
-# data frame summarized by sex
-OhioSexDF <- OhioDF %>% 
-  group_by(OnsetDate, Sex) %>%
-  summarize(ncases = sum(`Case Count`),
-            ndead = sum(`Death Due to Illness Count`,
-                        na.rm=TRUE),
-            nhosp = sum(`Hospitalized Count`,
-                        na.rm=TRUE))
+# # data frame summarized by sex
+# OhioSexDF <- OhioCountyDFB %>% 
+#     group_by(Date, Sex) %>%
+#     summarize(ncases = sum(`Case Count`),
+#               ndead = sum(`Death Due to Illness Count`,
+#                           na.rm=TRUE),
+#               nhosp = sum(`Hospitalized Count`,
+#                           na.rm=TRUE))
 
 ###################### Tab 6 - top counties table ########################
 # create new dataframes ordered by most to least ncases
 OhioTopCountyDF <- OhioCountyDF[,c(1:4,6:8,5)] %>% 
-  arrange(desc(ncases))
+    arrange(desc(ncases))
 
 # rename variables for table display
 OhioTopCountyDF <- OhioTopCountyDF%>% 
-  rename(`Case Count` = ncases,
-         `Death Count` = ndead,
-         `Hospitalization Count` = nhosp,
-         `Case Rate` = caseRate10K,
-         `Death Rate` = deathRate10K,
-         `Hospitalization Rate` = hospRate10K,
-         `2019 Population` = Pop2019)
+    rename(`Case Count` = ncases,
+           `Death Count` = ndead,
+           `Hospitalization Count` = nhosp,
+           `Case Rate` = caseRate10K,
+           `Death Rate` = deathRate10K,
+           `Hospitalization Rate` = hospRate10K,
+           `2019 Population` = Pop2019)
 
 ###################### Miscellaneous variables/mappings ###################
 # set up color mappings for counties
@@ -192,349 +223,353 @@ LastCase <- max(OhioDF$OnsetDate)
 
 # define UI for application
 ui <- fluidPage(
-  
-  theme = shinytheme("readable"),
-  
-  titlePanel("Ohio COVID-19 Dynamic Dashboard"),
-  tabsetPanel(
-    ###################### Tab 1 - choropleth map ############################
-    tabPanel("Ohio Map", 
-             plotlyOutput("Map"),
-             tags$div(
-               tags$body("Scroll over a county for further data"),
-               tags$br(),
-               tags$tbody(paste("Updated: ",TODAY)),
-               tags$br(),
-               tags$tbody("* Rates are counts per 10,000 residents by county."),
-               tags$br(),
-               tags$a("Source: Ohio Department of Health Dashboard Data",
-                      href="https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")
-             )
-    ),
-    ###################### Tab 2 - bar graphs over time ######################
-    tabPanel("Counts/Rates Over Time",
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput(inputId = "yvar",
-                             label= "Select response to explore: ",
-                             choices = varnames,
-                             selected="Case Counts"),
-                 selectizeInput(inputId = "countytime",
-                                label = "Click in the box to select counties to highlight: ",
-                                choices = unique(OhioCountyTimeDF$County),
-                                multiple = TRUE,
-                                selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware")),
-                 sliderInput("MAdays",
-                             "Days averaged:",
-                             min = 2,
-                             max = 30,
-                             value = 7),
-                 dateRangeInput("daterange",
-                                "Date range:",
-                                start = FirstCase,
-                                end   = TODAY)),
-               mainPanel(
-                 plotOutput("BarTime")
-               )
-             )
-    ),
-    ###################### Tab 3 - bar graphs by county ######################
-    tabPanel("Counts/Rates By County",
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput(inputId = "zvar",
-                             label= "Select response to explore: ",
-                             choices = varnames,
-                             selected="Cases"),
-                 selectizeInput(inputId = "countycounty",
-                                label = "Click in the box to select county to highlight: ",
-                                choices = unique(OhioCountyTimeDF$County),
-                                multiple = TRUE,
-                                selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"))
-               ),
-               mainPanel(
-                 plotOutput("BarCounty")
-               )
-             )
-    ),
-    ###################### Tab 4 - bar graphs by age #########################
-    tabPanel("Counts by Ages",
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput(inputId = "avar",
-                             label= "Select response to explore: ",
-                             choices = varnamesAge,
-                             selected="Case Counts"),
-                 selectInput(inputId = "countyage",
-                             label = "Click in the box to select county to highlight: ",
-                             choices = unique(OhioAgeTimeDF$County),
-                             selected = "Butler"),
-                 selectizeInput(inputId = "agerange",
-                                label = "Click in the box to select age ranges to highlight: ",
-                                choices = unique(OhioAgeTimeDF$AgeRange),
-                                multiple = TRUE,
-                                selected = c("0-19","20-29","60-69","70-79")),
-                 sliderInput("MAdaysAge",
-                             "Days averaged:",
-                             min = 2,
-                             max = 30,
-                             value = 7),
-                 dateRangeInput("daterangeAge",
-                                "Date range:",
-                                start = FirstCase,
-                                end   = TODAY)),
-               mainPanel(
-                 plotOutput("BarAge")
-               )
-             )
-    ),
-    ###################### Tab 5 - bar graphs by sex #########################
-    tabPanel("Counts by Sex",
-             sidebarLayout(
-               sidebarPanel(
-                 selectInput(inputId = "bvar",
-                             label= "Select response to explore: ",
-                             choices = varnamesAge,
-                             selected="Case Counts"),
-                 selectizeInput(inputId = "sex",
-                                label = "Click in the box to select sexes to highlight: ",
-                                choices = unique(OhioSexDF$Sex),
-                                multiple = TRUE,
-                                selected = c("Male","Female")),
-                 sliderInput("MAdaysSex",
-                             "Days averaged:",
-                             min = 2,
-                             max = 30,
-                             value = 7),
-                 dateRangeInput("daterangeSex",
-                                "Date range:",
-                                start = FirstCase,
-                                end   = TODAY)),
-               mainPanel(
-                 plotOutput("BarSex")
-               )
-             )
-    ),
-    ###################### Tab 6 - top counties table ####################
-    tabPanel("Table", 
-             tags$tbody("* Rates are counts per 10,000 residents by county."),
-             dataTableOutput("table"),
-             tags$a("Source: Ohio Department of Health Dashboard Data",
-                    href="https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")
-    ),
-    ###################### Tab 7 - references ################################
-    tabPanel("References",
-             tags$div(
-               tags$p("An Ohio COVID Dashboard by Austin Chamroontaneskul"),
-               tags$p("Date of Construction: December 4, 2020"),
-               tags$p("The COVID data were obtained from a ",
-                      tags$a("CSV data set",
-                             href="https://coronavirus.ohio.gov/static/COVIDSummaryData.csv",
-                             .noWS = "outside"
-                      ),
-                      " downloaded from the ",
-                      tags$a("Ohio Department of Health COVID-19 Dashboard",
-                             href="https://coronavirus.ohio.gov/wps/portal/gov/covid-19/dashboards",
-                             .noWS = "outside")),
-               tags$p("The population data were obtained from a ",
-                      tags$a("CSV data set",
-                             href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv",
-                             .noWS = "outside"
-                      ),
-                      " downloaded from the ",
-                      tags$a("United States Census Bureau",
-                             href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/",
-                             .noWS = "outside")),
-               tags$p("Color hexes were selected from ",
-                      tags$a("HTMLcolorcodes.com",
-                             href="https://htmlcolorcodes.com/",
-                             .noWS = "outside")),
-               tags$p("R packages utilized:"),
-               tags$ul(
-                 tags$li("C. Sievert. Interactive Web-Based Data Visualization with R, plotly, and shiny. Chapman and
+    
+    theme = shinytheme("readable"),
+    
+    titlePanel("Ohio COVID-19 Dynamic Dashboard"),
+    tabsetPanel(
+        ###################### Tab 1 - choropleth map ############################
+        tabPanel("Ohio Map", 
+                 plotlyOutput("Map"),
+                 tags$div(
+                     tags$body("Scroll over a county for further data"),
+                     tags$br(),
+                     tags$tbody(paste("Updated: ",TODAY)),
+                     tags$br(),
+                     tags$tbody("* Rates are counts per 10,000 residents by county."),
+                     tags$br(),
+                     tags$a("Source: Ohio Department of Health Dashboard Data",
+                            href="https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")
+                 )
+        ),
+        ###################### Tab 2 - bar graphs over time ######################
+        tabPanel("Counts/Rates Over Time",
+                 sidebarLayout(
+                     sidebarPanel(
+                         selectInput(inputId = "yvar",
+                                     label= "Select response to explore: ",
+                                     choices = varnames,
+                                     selected="Case Counts"),
+                         selectizeInput(inputId = "countytime",
+                                        label = "Click in the box to select counties to highlight: ",
+                                        choices = unique(OhioCountyTimeDF$County),
+                                        multiple = TRUE,
+                                        selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware")),
+                         sliderInput("MAdays",
+                                     "Days averaged:",
+                                     min = 2,
+                                     max = 30,
+                                     value = 7),
+                         dateRangeInput("daterange",
+                                        "Date range:",
+                                        start = FirstCase,
+                                        end   = TODAY)),
+                     mainPanel(
+                         plotOutput("BarTime")
+                     )
+                 )
+        ),
+        ###################### Tab 3 - bar graphs by county ######################
+        tabPanel("Counts/Rates By County",
+                 sidebarLayout(
+                     sidebarPanel(
+                         selectInput(inputId = "zvar",
+                                     label= "Select response to explore: ",
+                                     choices = varnames,
+                                     selected="Cases"),
+                         selectizeInput(inputId = "countycounty",
+                                        label = "Click in the box to select county to highlight: ",
+                                        choices = unique(OhioCountyTimeDF$County),
+                                        multiple = TRUE,
+                                        selected = c("Butler","Hamilton","Preble","Cuyahoga","Delaware"))
+                     ),
+                     mainPanel(
+                         plotOutput("BarCounty")
+                     )
+                 )
+        ),
+        ###################### Tab 4 - bar graphs by age #########################
+        tabPanel("Counts by Ages",
+                 sidebarLayout(
+                     sidebarPanel(
+                         selectInput(inputId = "avar",
+                                     label= "Select response to explore: ",
+                                     choices = varnamesAge,
+                                     selected="Case Counts"),
+                         selectInput(inputId = "countyage",
+                                     label = "Click in the box to select county to highlight: ",
+                                     choices = unique(OhioAgeTimeDF$County),
+                                     selected = "Butler"),
+                         selectizeInput(inputId = "agerange",
+                                        label = "Click in the box to select age ranges to highlight: ",
+                                        choices = unique(OhioAgeTimeDF$AgeRange),
+                                        multiple = TRUE,
+                                        selected = c("0-19","20-29","60-69","70-79")),
+                         sliderInput("MAdaysAge",
+                                     "Days averaged:",
+                                     min = 2,
+                                     max = 30,
+                                     value = 7),
+                         dateRangeInput("daterangeAge",
+                                        "Date range:",
+                                        start = FirstCase,
+                                        end   = TODAY)),
+                     mainPanel(
+                         plotOutput("BarAge")
+                     )
+                 )
+        ),
+        ###################### Tab 5 - bar graphs by sex #########################
+        # tabPanel("Counts by Sex",
+        #          sidebarLayout(
+        #              sidebarPanel(
+        #                  selectInput(inputId = "bvar",
+        #                              label= "Select response to explore: ",
+        #                              choices = varnamesAge,
+        #                              selected="Case Counts"),
+        #                  selectizeInput(inputId = "sex",
+        #                                 label = "Click in the box to select sexes to highlight: ",
+        #                                 choices = unique(OhioSexDF$Sex),
+        #                                 multiple = TRUE,
+        #                                 selected = c("Male","Female")),
+        #                  sliderInput("MAdaysSex",
+        #                              "Days averaged:",
+        #                              min = 2,
+        #                              max = 30,
+        #                              value = 7),
+        #                  dateRangeInput("daterangeSex",
+        #                                 "Date range:",
+        #                                 start = FirstCase,
+        #                                 end   = TODAY)),
+        #              mainPanel(
+        #                  plotOutput("BarSex")
+        #              )
+        #          )
+        # ),
+        ###################### Tab 6 - top counties table ####################
+        tabPanel("Table", 
+                 tags$tbody("* Rates are counts per 10,000 residents by county."),
+                 dataTableOutput("table"),
+                 tags$a("Source: Ohio Department of Health Dashboard Data",
+                        href="https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")
+        ),
+        ###################### Tab 7 - references ################################
+        tabPanel("References",
+                 tags$div(
+                     tags$p("An Ohio COVID Dashboard by Austin Chamroontaneskul"),
+                     tags$p("Date of Construction: December 4, 2020"),
+                     tags$p("The COVID data were obtained from a ",
+                            tags$a("CSV data set",
+                                   href="https://coronavirus.ohio.gov/static/COVIDSummaryData.csv",
+                                   .noWS = "outside"
+                            ),
+                            " downloaded from the ",
+                            tags$a("Ohio Department of Health COVID-19 Dashboard",
+                                   href="https://coronavirus.ohio.gov/wps/portal/gov/covid-19/dashboards",
+                                   .noWS = "outside")),
+                     tags$p("The population data were obtained from a ",
+                            tags$a("CSV data set",
+                                   href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv",
+                                   .noWS = "outside"
+                            ),
+                            " downloaded from the ",
+                            tags$a("United States Census Bureau",
+                                   href="https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/",
+                                   .noWS = "outside")),
+                     tags$p("Color hexes were selected from ",
+                            tags$a("HTMLcolorcodes.com",
+                                   href="https://htmlcolorcodes.com/",
+                                   .noWS = "outside")),
+                     tags$p("R packages utilized:"),
+                     tags$ul(
+                         tags$li("C. Sievert. Interactive Web-Based Data Visualization with R, plotly, and shiny. Chapman and
   Hall/CRC Florida, 2020."),
-                 tags$li("Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with lubridate. Journal of
+                         tags$li("Garrett Grolemund, Hadley Wickham (2011). Dates and Times Made Easy with lubridate. Journal of
   Statistical Software, 40(3), 1-25. URL https://www.jstatsoft.org/v40/i03/."),
-                 
-                 tags$li("Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686,
+                         
+                         tags$li("Wickham et al., (2019). Welcome to the tidyverse. Journal of Open Source Software, 4(43), 1686,
                          https://doi.org/10.21105/joss.01686"),
-                 tags$li("Winston Chang (2018). shinythemes: Themes for Shiny. R package version 1.1.2.
+                         tags$li("Winston Chang (2018). shinythemes: Themes for Shiny. R package version 1.1.2.
   https://CRAN.R-project.org/package=shinythemes"),
-                 tags$li("Winston Chang, Joe Cheng, JJ Allaire, Yihui Xie and Jonathan McPherson (2020). shiny: Web
+                         tags$li("Winston Chang, Joe Cheng, JJ Allaire, Yihui Xie and Jonathan McPherson (2020). shiny: Web
   Application Framework for R. R package version 1.5.0. https://CRAN.R-project.org/package=shiny")
-               )
-             )
+                     )
+                 )
+        )
     )
-  )
 )
 
 
 # define server logic required to draw output
 server <- function(input, output, session) {
-  
-  # define reactive functions for tabs 2-5
-  Time_DF <- reactive({
-    OhioCountyTimeDF %>%
-      filter(County %in% c(input$countytime))})
-  
-  County_DF <- reactive({
-    OhioCountyCountyDF %>%
-      filter(County %in% c(input$countycounty))})
-  
-  Age_DF <- reactive({
-    OhioAgeTimeDF %>%
-      filter(County %in% c(input$countyage),
-             AgeRange %in% c(input$agerange))})
-  
-  Sex_DF <- reactive({
-    OhioSexDF %>% 
-      filter(Sex %in% c(input$sex))})
-  
-  ###################### Tab 1 - choropleth map ############################
-  output$Map <- renderPlotly({
-    MapGG <- ggplot(data=MapData, aes(x=long,
-                                      y=lat,
-                                      group=group,
-                                      fill=CountCatC,
-                                      
-                                      text = paste(County, "<br>Cases: ", ncases, "<br>Deaths: ", ndead, "<br>Hospitalizations: ", nhosp, "<br>Case Rate: ", caseRate10K, "<br>Death Rate: ", deathRate10K,"<br>Hospitalization Rate: ", hospRate10K, sep = ""))) +
-      scale_fill_brewer(palette = "Blues", name = "Case Counts") +
-      geom_polygon(colour = "black", size = .1) +
-      coord_map("polyconic") +
-      theme_light() +
-      theme(axis.title.y=element_blank(),
-            axis.ticks.y=element_blank(),
-            axis.text.y=element_blank(),
-            axis.ticks.x=element_blank(),
-            axis.title.x=element_blank(),
-            axis.text.x=element_blank(),
-            panel.grid.major=element_blank(),
-            panel.grid.minor=element_blank(),
-            panel.border=element_blank()) +
-      labs(title = paste("Interactive Cumulative Counts/Rates from",FirstCase,"to",LastCase))
-    ggplotly(MapGG, tooltip = c("text"))
-  })
-  
-  ###################### Tab 2 - bar graphs over time ######################
-  output$BarTime <- renderPlot({
-    ggplot() +
-      labs(x="Onset Date", y="Number",
-           title=paste(names(varnames)[varnames==input$yvar],
-                       "by County - ", input$MAdays,
-                       "d Moving Average"),
-           subtitle=paste("Updated: ",TODAY),
-		tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
-                                                                                                                                                  "ncases" = OhioTotalDF$ncases,
-                                                                                                                                                  "ndead" = OhioTotalDF$ndead,
-                                                                                                                                                  "nhosp" = OhioTotalDF$nhosp,
-                                                                                                                                                  "caseRate10K" = OhioTotalDF$caseRate10K,
-                                                                                                                                                  "deathRate10K" = OhioTotalDF$deathRate10K,
-                                                                                                                                                  "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
-
-           caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
-                          "\n","* Rates are counts per 10,000 residents by county.")) +
-      geom_col(data=Time_DF(),
-               aes_string(x="OnsetDate",
-                          y=input$yvar,
-                          fill = "County"),
-               alpha=0.5,
-               position = "dodge") +
-      geom_ma(data=Time_DF(),
-              aes_string(x = "OnsetDate",
-                         y = input$yvar,
-                         color = "County"),
-              n=input$MAdays, linetype=1, size=1.25) +
-      scale_fill_manual("County",values=Color) +
-      scale_color_manual("County",values=Color) +
-      scale_x_date(date_breaks = "1 month",
-                   date_labels = "%b %d",
-                   limits=input$daterange) +
-      theme_minimal()
-  })
-  
-  ###################### Tab 3 - bar graphs by county ######################
-  output$BarCounty <- renderPlot({
-    ggplot() +
-      labs(x="Number", y="County",
-           title=paste("Cumulative",names(varnames)[varnames==input$zvar],"from",FirstCase,"to",LastCase),
-           subtitle=paste("Updated: ",TODAY),
-           caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
-                          "\n","* Rates are counts per 10,000 residents by county.")) +
-      geom_col(data = County_DF(), aes_string(y = paste("reorder(County,",input$zvar,")"), 
-                                              x = input$zvar,
-                                              fill = "County")) +
-      scale_x_continuous(expand=c(0,0)) +
-      scale_fill_manual("County",values=Color) +
-      theme_light() +
-      theme(legend.position = "none",
-            axis.title.x=element_blank(),
-            axis.ticks.x=element_blank(),
-            axis.title.y=element_blank(),
-            axis.ticks.y=element_blank(),
-            panel.grid.major=element_blank(),
-            panel.grid.minor=element_blank(),
-            panel.border=element_blank())
-  })
-  
-  ###################### Tab 4 - bar graphs by age #########################
-  output$BarAge <- renderPlot({
-    ggplot() +
-      labs(x="Onset Date", y="Number",
-           title=paste(names(varnamesAge)[varnamesAge==input$avar],
-                       "by Age Range - ", input$MAdaysAge,
-                       "d Moving Average"),
-           subtitle=paste("Updated: ",TODAY),
-           caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")) +
-      #           tag = paste(input$county,"County"))
-      geom_col(data=Age_DF(),
-               aes_string(x="OnsetDate",
-                          y=input$avar,
-                          fill = "AgeRange"),
-               alpha=0.5,
-               position = "dodge") +
-      geom_ma(data=Age_DF(),
-              aes_string(x = "OnsetDate",
-                         y = input$avar,
-                         color = "AgeRange"),
-              n=input$MAdaysAge, linetype=1, size=1.25) +
-      scale_fill_manual("AgeRange",values = ColorAge) +
-      scale_color_manual("AgeRange",values = ColorAge) +
-      scale_x_date(date_breaks = "1 month",
-                   date_labels = "%b %d",
-                   limits=input$daterangeAge) +
-      theme_minimal()
-  })
-  
-  ###################### Tab 5 - bar graphs by sex #########################
-  output$BarSex <- renderPlot({
-    ggplot() +
-      labs(x="Onset Date", y="Number",
-           title=paste(names(varnamesAge)[varnamesAge==input$bvar],
-                       "by Sex - ", input$MAdaysSex,
-                       "d Moving Average"),
-           subtitle=paste("Updated: ",TODAY),
-           caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")) +
-      geom_col(data=Sex_DF(),
-               aes_string(x="OnsetDate",
-                          y=input$bvar,
-                          fill = "Sex"),
-               alpha=0.5,
-               position = "dodge") +
-      geom_ma(data=Sex_DF(),
-              aes_string(x = "OnsetDate",
-                         y = input$bvar,
-                         color = "Sex"),
-              n=input$MAdaysSex, linetype=1, size=1.25) +
-      scale_fill_manual("Sex",values = ColorSex) +
-      scale_color_manual("Sex",values = ColorSex) +
-      scale_x_date(date_breaks = "1 month",
-                   date_labels = "%b %d",
-                   limits=input$daterangeSex) +
-      theme_minimal()
-  })
-  
-  ###################### Tab 6 - top counties table ####################
-  output$table <- renderDataTable(OhioTopCountyDF)
+    
+    # define reactive functions for tabs 2-5
+    Time_DF <- reactive({
+        OhioCountyTimeDF %>%
+            filter(County %in% c(input$countytime))})
+    
+    County_DF <- reactive({
+        OhioCountyCountyDF %>%
+            filter(County %in% c(input$countycounty))})
+    
+    Age_DF <- reactive({
+        OhioAgeTimeDF %>%
+            filter(County %in% c(input$countyage),
+                   AgeRange %in% c(input$agerange))})
+    
+    # Sex_DF <- reactive({
+    #     OhioSexDF %>% 
+    #         filter(Sex %in% c(input$sex))})
+    
+    
+    ###################### Tab 1 - choropleth map ############################
+    output$Map <- renderPlotly({
+        MapGG <- ggplot(data=MapData, aes(x=long,
+                                          y=lat,
+                                          group=group,
+                                          fill=CountCatC,
+                                          
+                                          text = paste(County, "<br>Cases: ", ncases, "<br>Deaths: ", ndead, "<br>Hospitalizations: ", nhosp, "<br>Case Rate: ", caseRate10K, "<br>Death Rate: ", deathRate10K,"<br>Hospitalization Rate: ", hospRate10K, sep = ""))) +
+            scale_fill_brewer(palette = "Blues", name = "Case Counts") +
+            geom_polygon(colour = "black", size = .1) +
+            coord_map("polyconic") +
+            theme_light() +
+            theme(axis.title.y=element_blank(),
+                  axis.ticks.y=element_blank(),
+                  axis.text.y=element_blank(),
+                  axis.ticks.x=element_blank(),
+                  axis.title.x=element_blank(),
+                  axis.text.x=element_blank(),
+                  panel.grid.major=element_blank(),
+                  panel.grid.minor=element_blank(),
+                  panel.border=element_blank()) +
+            labs(title = paste("Interactive Cumulative Counts/Rates from",FirstCase,"to",LastCase))
+        ggplotly(MapGG, tooltip = c("text"))
+    })
+    
+    ###################### Tab 2 - bar graphs over time ######################
+    output$BarTime <- renderPlot({
+        ggplot() +
+            labs(x="Date", y="Number",
+                 title=paste(names(varnames)[varnames==input$yvar],
+                             "by County - ", input$MAdays,
+                             "d Moving Average"),
+                 subtitle=paste("Updated: ",TODAY),
+                 tag=paste("Ohio ", substring(names(varnames)[varnames==input$yvar], 0, nchar(names(varnames)[varnames==input$yvar]) - 1), ": ", switch(input$yvar,
+                                                                                                                                                        "ncases" = OhioTotalDF$ncases,
+                                                                                                                                                        "ndead" = OhioTotalDF$ndead,
+                                                                                                                                                        "nhosp" = OhioTotalDF$nhosp,
+                                                                                                                                                        "caseRate10K" = OhioTotalDF$caseRate10K,
+                                                                                                                                                        "deathRate10K" = OhioTotalDF$deathRate10K,
+                                                                                                                                                        "hospRate10K" = OhioTotalDF$hospRate10K), sep=""),
+                 
+                 caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
+                                "\n","* Rates are counts per 10,000 residents by county.")) +
+            geom_col(data=Time_DF(),
+                     aes_string(x="Date",
+                                y=input$yvar,
+                                fill = "County"),
+                     alpha=0.5,
+                     position = "dodge") +
+            geom_ma(data=Time_DF(),
+                    aes_string(x = "Date",
+                               y = input$yvar,
+                               color = "County"),
+                    n=input$MAdays, linetype=1, size=1.25) +
+            scale_fill_manual("County",values=Color) +
+            scale_color_manual("County",values=Color) +
+            scale_x_date(date_breaks = "1 month",
+                         date_labels = "%b %d",
+                         limits=input$daterange) +
+            theme_minimal()
+    })
+    
+    ###################### Tab 3 - bar graphs by county ######################
+    output$BarCounty <- renderPlot({
+        ggplot() +
+            labs(x="Number", y="County",
+                 title=paste("Cumulative",names(varnames)[varnames==input$zvar],"from",FirstCase,"to",LastCase),
+                 subtitle=paste("Updated: ",TODAY),
+                 caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv",
+                                "\n","* Rates are counts per 10,000 residents by county.")) +
+            geom_col(data = County_DF(), aes_string(y = paste("reorder(County,",input$zvar,")"), 
+                                                    x = input$zvar,
+                                                    fill = "County")) + #bar graph
+            geom_text(size=4,data=County_DF(),aes_string(x=input$zvar,y=paste("reorder(County,",input$zvar,")"),label=input$zvar,fill=NULL, hjust = -0.1))+
+            #scale_x_continuous(expand=c(0,0))+
+            scale_fill_manual("County",values=Color) +
+            theme_light() +
+            theme(legend.position = "none",
+                  axis.title.x=element_blank(),
+                  axis.ticks.x=element_blank(),
+                  axis.title.y=element_blank(),
+                  axis.ticks.y=element_blank(),
+                  panel.grid.major=element_blank(),
+                  panel.grid.minor=element_blank(),
+                  panel.border=element_blank(),
+                  axis.text.x =element_blank(),
+                  axis.text.y = element_text(size = 12))
+    })
+    
+    ###################### Tab 4 - bar graphs by age #########################
+    output$BarAge <- renderPlot({
+        ggplot() +
+            labs(x="Date", y="Number",
+                 title=paste(names(varnamesAge)[varnamesAge==input$avar],
+                             "by Age Range - ", input$MAdaysAge,
+                             "d Moving Average"),
+                 subtitle=paste("Updated: ",TODAY),
+                 caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")) +
+            #           tag = paste(input$county,"County"))
+            geom_col(data=Age_DF(),
+                     aes_string(x="Date",
+                                y=input$avar,
+                                fill = "AgeRange"),
+                     alpha=0.5,
+                     position = "dodge") +
+            geom_ma(data=Age_DF(),
+                    aes_string(x = "Date",
+                               y = input$avar,
+                               color = "AgeRange"),
+                    n=input$MAdaysAge, linetype=1, size=1.25) +
+            scale_fill_manual("AgeRange",values = ColorAge) +
+            scale_color_manual("AgeRange",values = ColorAge) +
+            scale_x_date(date_breaks = "1 month",
+                         date_labels = "%b %d",
+                         limits=input$daterangeAge) +
+            theme_minimal()
+    })
+    
+    # ###################### Tab 5 - bar graphs by sex #########################
+    # output$BarSex <- renderPlot({
+    #     ggplot() +
+    #         labs(x="Onset Date", y="Number",
+    #              title=paste(names(varnamesAge)[varnamesAge==input$bvar],
+    #                          "by Sex - ", input$MAdaysSex,
+    #                          "d Moving Average"),
+    #              subtitle=paste("Updated: ",TODAY),
+    #              caption= paste("Source: https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv")) +
+    #         geom_col(data=Sex_DF(),
+    #                  aes_string(x="OnsetDate",
+    #                             y=input$bvar,
+    #                             fill = "Sex"),
+    #                  alpha=0.5,
+    #                  position = "dodge") +
+    #         geom_ma(data=Sex_DF(),
+    #                 aes_string(x = "OnsetDate",
+    #                            y = input$bvar,
+    #                            color = "Sex"),
+    #                 n=input$MAdaysSex, linetype=1, size=1.25) +
+    #         scale_fill_manual("Sex",values = ColorSex) +
+    #         scale_color_manual("Sex",values = ColorSex) +
+    #         scale_x_date(date_breaks = "1 month",
+    #                      date_labels = "%b %d",
+    #                      limits=input$daterangeSex) +
+    #         theme_minimal()
+    # })
+    
+    ###################### Tab 6 - top counties table ####################
+    output$table <- renderDataTable(OhioTopCountyDF)
 }
 
 # run the application 

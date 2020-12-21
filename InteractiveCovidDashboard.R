@@ -1,6 +1,6 @@
-# STA 504 Dynamic Dashboard Final Project
-# Austin Chamroontaneskul
-# December 4, 2020
+# Dynamic Dashboard Server Project
+# Austin Chamroontaneskul, et al.
+# December 15, 2020
 ################################
 # load necessary packages
 library(shiny)
@@ -8,6 +8,7 @@ library(shinythemes)
 library(tidyverse)
 library(lubridate)
 library(plotly)
+library(tidyquant)
 
 # load in and clean COVID dataset
 ohioCovidDashboard <- "https://coronavirus.ohio.gov/static/dashboards/COVIDSummaryData.csv"
@@ -15,6 +16,11 @@ OhioDF <- read_csv(file= ohioCovidDashboard) %>%
   filter(Sex != "Total") %>%
   mutate(AgeFactor = factor(`Age Range`),
          OnsetDate = mdy(`Onset Date`))
+
+#remove unknown sex
+OhioDF<- OhioDF %>% 
+    filter(Sex != "Unknown")
+
 
 # load in and clean population dataset
 OhioCountyPop <- read_csv("https://www2.census.gov/programs-surveys/popest/datasets/2010-2019/counties/totals/co-est2019-alldata.csv")
@@ -38,9 +44,9 @@ OhioCountyDF <- OhioDF %>%
 # add county population to DF and construct rates
 OhioCountyDF <- merge(OhioCountyDF, OhioPop, by="County")
 OhioCountyDF <- OhioCountyDF %>% 
-  mutate(caseRate10K = round(ncases/Pop2019*10000,2),
-         deathRate10K = round(ndead/Pop2019*10000,2),
-         hospRate10K = round(nhosp/Pop2019*10000,2),
+  mutate(caseRate10K = round(ncases/Pop2019*10000,0),
+         deathRate10K = round(ndead/Pop2019*10000,0),
+         hospRate10K = round(nhosp/Pop2019*10000,0),
          CountCatC = as.character(cut(ncases,
                                       breaks = c(0, 1000, 2000, 
                                                  5000, signif(max(ncases) + 10000,1)),
@@ -80,9 +86,9 @@ OhioCountyTimeDF <- OhioDF %>%
 # merge population dataset with COVID dataset
 OhioCountyTimeDF <- merge(OhioCountyTimeDF, OhioPop, by="County")
 OhioCountyTimeDF <- OhioCountyTimeDF %>% 
-  mutate(caseRate10K = ncases/Pop2019*10000,
-         deathRate10K = ndead/Pop2019*10000,
-         hospRate10K = nhosp/Pop2019*10000)
+  mutate(caseRate10K = round(ncases/Pop2019*10000,0),
+           deathRate10K = round(ndead/Pop2019*10000,0),
+           hospRate10K = round(nhosp/Pop2019*10000,0))
 
 ###################### Tab 3 - bar graphs by county ######################
 # we use the OhioCountyDF already built earlier
@@ -387,7 +393,7 @@ server <- function(input, output, session) {
                                       `Death Rate` = deathRate10K,
                                       `Hospitalization Rate` = hospRate10K)) +
       scale_fill_brewer(palette = "Blues", name = "Case Counts") +
-      geom_polygon(colour = "black") +
+      geom_polygon(colour = "black", size = .1) +
       coord_map("polyconic") +
       theme_light() +
       theme(axis.title.y=element_blank(),

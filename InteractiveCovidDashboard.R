@@ -1,4 +1,4 @@
-# Dynamic Dashboard Server Project
+ # Dynamic Dashboard Server Project
 # Austin Chamroontaneskul, et al.
 # December 21, 2020
 ################################
@@ -332,7 +332,7 @@ ui <- fluidPage(
              )
     ),
     ###################### Tab 6 - top counties table ####################
-    tabPanel("Table", 
+    tabPanel("Data Table", 
              tags$h5("Click on a column title to reorder based on a chosen category"),
              tags$br(),
              tags$h6("* Rates are counts per 10,000 residents by county."),
@@ -433,12 +433,14 @@ server <- function(input, output, session) {
             axis.ticks.x=element_blank(),
             axis.title.x=element_blank(),
             axis.text.x=element_blank(),
+            plot.title = element_text(face = "bold", size = 16),
             panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),
             panel.border=element_blank()) +
       labs(title = paste("Interactive Cumulative Counts/Rates* from",FirstCase,"to",LastCase))
     ggplotly(MapGG, tooltip = c("text"))
   })
+
   
   ###################### Tab 1 - download button ######################
   output$tab1Download=downloadHandler(
@@ -460,6 +462,7 @@ server <- function(input, output, session) {
               axis.ticks.x=element_blank(),
               axis.title.x=element_blank(),
               axis.text.x=element_blank(),
+              plot.title = element_text(face = "bold", size = 16),
               panel.grid.major=element_blank(),
               panel.grid.minor=element_blank(),
               panel.border=element_blank()) +
@@ -580,7 +583,11 @@ server <- function(input, output, session) {
       scale_x_date(date_breaks = "1 month",
                    date_labels = "%b %d",
                    limits=input$daterange) +
-      theme_minimal()
+      theme_minimal()+
+      theme(
+        plot.title = element_text(face = "bold", size = 16),
+        plot.subtitle = element_text(face = "bold", color = "darkred", size = 14)
+      )
   })
   
   ###################### Tab 2 - download button ######################
@@ -697,7 +704,11 @@ server <- function(input, output, session) {
         scale_x_date(date_breaks = "1 month",
                      date_labels = "%b %d",
                      limits=input$daterange) +
-        theme_minimal()
+        theme_minimal()+
+        theme(
+          plot.title = element_text(face = "bold", size = 16),
+          plot.subtitle = element_text(face = "bold", color = "darkred", size = 14)
+        )
       print(plot2)
       dev.off()
     },
@@ -744,7 +755,10 @@ server <- function(input, output, session) {
             panel.grid.minor=element_blank(),
             panel.border=element_blank(),
             axis.text.x =element_blank(),
-            axis.text.y = element_text(size = 12))
+            axis.text.y = element_text(size = 12),
+            plot.title = element_text(face = "bold", size = 16),
+            plot.subtitle = element_text(face = "bold", color = "darkred", size = 14)
+            )
   })
   
   ###################### Tab 3 - download button ######################
@@ -819,7 +833,9 @@ server <- function(input, output, session) {
         axis.ticks.x = element_blank(),
         strip.text = element_text(size = 12),
         panel.grid.major.x = element_line(color = "gray95"),
-        panel.grid.major.y = element_line(color = "gray95")
+        panel.grid.major.y = element_line(color = "gray95"),
+        plot.title = element_text(face = "bold", size = 16),
+        plot.subtitle = element_text(face = "bold", color = "darkred", size = 14)
       )
   }, height=800)
   
@@ -925,7 +941,11 @@ server <- function(input, output, session) {
       scale_x_date(date_breaks = "1 month",
                    date_labels = "%b %d",
                    limits=input$daterangeSex) +
-      theme_minimal()
+      theme_minimal()+
+      theme(
+        plot.title = element_text(face = "bold", size = 16),
+        plot.subtitle = element_text(face = "bold", color = "darkred", size = 14)
+      )
   })
   # ###################### Tab 5 - download #########################
   output$tab5Download=downloadHandler(
